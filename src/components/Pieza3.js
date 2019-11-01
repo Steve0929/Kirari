@@ -12,6 +12,7 @@ import Grid from '@material-ui/core/Grid';
 import Zoom from '@material-ui/core/Zoom';
 import {Redirect} from 'react-router-dom';
 
+
 class Pieza3 extends Component{
   constructor(props) {
       super(props);
@@ -28,7 +29,13 @@ class Pieza3 extends Component{
       blips: 0,
       stoping: false,
       socket: window.io('http://localhost:3001'),
-      players: null
+      players: null,
+      simbolSeleccionado: 0,
+      locked: false,
+      explode: false,
+      bet: 25,
+      inputBet: 25,
+      totalCoins: null,
   }
 
 componentDidUpdate() {
@@ -39,11 +46,26 @@ componentDidMount(){
   this.state.socket.emit("join", {user: 'Esteban', room: this.gameid});
 
   this.state.socket.on('update', (msg)=>{
-    this.setState({joining:false, players: msg.players})
+    let coins = null;
+    if(msg.players[this.state.socket.id]){
+       coins = msg.players[this.state.socket.id].coins;
+    }
+    this.setState({joining:false, players: msg.players, totalCoins: coins})
   });
 
   this.state.socket.on('start', (msg)=>{
+    this.setState({joining:false, players: msg.players})
     this.start();
+  });
+
+  this.state.socket.on('stop', (msg)=>{
+    this.setState({a: msg.a, b: msg.b});
+    this.stopx();
+  });
+
+  this.state.socket.on('gameFinished', (msg)=>{
+    let coins = msg.players[this.state.socket.id].coins;
+    this.setState({players: msg.players, simbolSeleccionado: 0, locked: false, explode: false, totalCoins: coins})
   });
 
   if(this.state.enMovimiento){
@@ -54,6 +76,37 @@ componentDidMount(){
 returnLobby(){
   this.state.socket.emit('forceDisconnect');
   this.setState({toLobby:true})
+}
+
+selectSimbolo(simbolo){
+  console.log(simbolo);
+  this.state.socket.emit("selecciona", {seleccion: simbolo});
+  this.setState({simbolSeleccionado: simbolo})
+}
+
+lockIn(){
+  if(this.state.simbolSeleccionado != 0){
+     this.state.socket.emit("lockIn");
+     this.setState({locked: true});
+  }
+}
+
+setBet(){
+  var placeholderBet = this.state.inputBet;
+  if(placeholderBet<25){
+    this.state.socket.emit("bet", {amount: 25});
+    this.setState({bet: 25, inputBet: 25});
+  }
+  else{
+    this.state.socket.emit("bet", {amount: placeholderBet});
+    this.setState({bet: placeholderBet});
+  }
+}
+
+handleInputChange(e) {
+    this.setState({
+        [e.target.name]: e.target.value
+    });
 }
 
 stop(){
@@ -77,8 +130,8 @@ stopInSymbol(){
   //uvas 34 y 37
   //dulce 64 y 68
   //Corona 94 y 98
-  let a = 94;
-  let b = 98;
+  let a = this.state.a;
+  let b = this.state.b;
   if(this.state.enMovimiento){
   var PI2=Math.PI*1000;
   const rotation = this.state.rotation + 0.2 ;
@@ -91,10 +144,12 @@ stopInSymbol(){
   console.log('rotacion: '+this.state.rotation);
   console.log(Math.ceil(this.state.rotation % 360))
   let range = Math.ceil(this.state.rotation % 360)
-  let winSound = new Audio (win);
+
   if(a<range && range <b){
+    let winSound = new Audio (win);
      winSound.play();
-     this.setState({enMovimiento: false, stopping: false})
+     this.state.socket.emit("finished");
+     this.setState({enMovimiento: false, stopping: false, explode: true})
   }
   else{
     spin.style.transform = "rotate(" + (-angle) + "deg)";
@@ -122,64 +177,145 @@ tick() {
 }
 
 
+
+
+//🎁  🎆 🎇 🎈 🎉 🎋 🎍  🎏 🎐 🎑 🎒
+
 render(){
 if(this.state.toLobby){return(<Redirect to='/lobby'/>)}
 if(this.state.joining){return(<div>Conectando...<progress style={{width:'14em'}} className="progress is-info" max="100">40%</progress></div>)}
 var PI2=Math.PI*2;
 var angle=PI2-PI2/4;
 var startAngle=0;
-var symbols = ['👽','👑','👻','🍇','🍬','👑','🐋','🍇','🍬','👑','👻','👽'];
+var symbols = ['🎁','🎒','👻','🍇','🎈','👑','🐋','🎑','🍬','🎏','👻','👽'];
 var sweepAngle=PI2/symbols.length;
 var radius = 150;
 var blurred;
 this.state.enMovimiento ? blurred = 'blurThis' : blurred = '';
+
+const defaultOptions = {loop: false, autoplay: true, animationData: require('./plup.json'),
+  rendererSettings: {
+  preserveAspectRatio: 'xMidYMid slice'
+  }
+};
+
+var ev=[ {eventName: 'complete',callback: () => this.setState({explode: false}),},]
+
+var plup = <Lottie options={defaultOptions} height={'23em'} width={'23em'} isStopped={false} isClickToPauseDisabled = {true} eventListeners={ev}
+         direction={1} speed={1.5} isPaused={false} style={{position: 'absolute',top:'-2em', left: '1em',zIndex: '9999'}}/>;
+
 return(
 <div className="container is-fluid" id='pieza3' style={{marginTop: '3em'}}>
   <div className="columns is-variable">
-
- <div className="column is-one-third">
-   <button className='button is-warning' onClick={()=>this.returnLobby()} >Return to lobby</button>
-  <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em',
-                  background: '', boxShadow:'0px 1px 15px 0px rgb(68, 159, 247), 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
+ <div className="column ">
+  <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em', marginTop: '0em',
+                  zoom: '0.85', width: 'max-content', marginLeft: '0em',
+                  background: '', boxShadow:'0px 1px 15px 0px rgb(68, 159, 247), 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)',
+                  boxShadow:'0px 1px 15px 0px #b5b5b5, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
            className='rounder'>
-
     <Paper style={{marginRight: '-1em',marginLeft: '-1em', marginBottom: '-1em',
                    marginBottom: '2em',height: '8em', paddingTop: '1em', boxShadow:'none', borderRadius: '10px',
                    borderBottomLeftRadius: '0px',borderBottomRightRadius: '0px',
-                   background: 'linear-gradient(135deg, #29fadf 0%,#4c83ff 100%)'}}>
+                   background: 'linear-gradient(135deg, #29fadf 0%,#4c83ff 100%)', background: 'black'}}>
         <h5 className="grey-text text-darken-3 title"  style={{color:'white', textAlign: 'center', marginTop: '1%'}}>
             Game {this.gameid}</h5>
-        <div style={{color:'white',fontWeight: '500', textAlign: 'center'}}><img src={Chipo} height='25' width='25'/> x25</div>
-        <p style={{color:'white',fontWeight: '500', textAlign: 'center',marginTop: '1em'}}>Estado:</p>
+
+        <div style={{color:'white',fontWeight: '500', textAlign: 'center'}}>Total:
+        <img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/> x{this.state.totalCoins}</div>
+
+        <div style={{color:'white',fontWeight: '500', textAlign: 'center'}}>Your bet:
+        <img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/> x{this.state.bet}</div>
+
+        <p style={{color:'white',fontWeight: '500', textAlign: 'center',marginTop: '1em'}}>Status:</p>
     </Paper>
+
+{this.state.locked == true ?
+  <div>
+    <input className="input is-info" type="number" min='25' value={this.state.inputBet}  name="inputBet" disabled
+           style={{marginBottom: '1em', width: '25%', fontWeight: 700, color:'#4698f9'}}></input>
+    <div className='button is-info' disabled style={{marginLeft: '1em'}}>Set bet<img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/></div>
+  </div>
+
+   :<div>
+   <input className="input is-info" type="number" min='25' value={this.state.inputBet} onChange={e=>this.handleInputChange(e)} name="inputBet"
+       style={{marginBottom: '1em', width: '25%', fontWeight: 700, color:'#4698f9'}}></input>
+    <div className='button is-info' style={{marginLeft: '1em'}} onClick={()=>this.setBet()}>
+      Set bet<img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/></div></div>
+        }
+
+    <div className="field">
+    <div className="control">
+      <div className="select is-info">
+      {this.state.locked == true ?
+        <select disabled onChange={(e)=>this.selectSimbolo(e.target.value)}>
+          {symbols.map((simbolo, index)=>{return(<option key={index}>{simbolo}</option>)})}
+        </select>
+      :
+      <select  onChange={(e)=>this.selectSimbolo(e.target.value)}>
+        {symbols.map((simbolo, index)=>{return(<option key={index}>{simbolo}</option>)})}
+      </select>
+      }
+
+      </div>
+      {this.state.locked == true ? <div className='button' disabled style={{marginLeft: '1em'}}>Locked In</div>
+        : <div className='button is-info' style={{marginLeft: '4em'}} onClick={()=>this.lockIn()} >Lock</div>
+      }
+
+    </div>
+    </div>
+
+    <div className="table-container">
+      <table className="table is-hoverable">
+      <thead>
+        <tr>
+        <th>Player</th>
+        <th>Choice</th>
+        <th>Status</th>
+        <th>Bet</th>
+      </tr>
+    </thead>
+        <tbody>
     {Object.keys(this.state.players).map((player, key)=>{
-      console.log(player);
-      console.log(this.state.players)
-      return(<p key={key+'as3'} style={{fontWeight: '500', textAlign: 'center'}}>{this.state.players[player].nombre} 👻
-                  <Zoom in={true} style={{ transitionDelay:'500ms' }}>
-                  <span style={{margin: '1em'}} className="tag is-success">Ready!</span></Zoom></p>)
+      return(<tr key={key+'as3'} style={{fontWeight: '500'}}>
+
+              <th>{this.state.players[player].nombre}</th>
+              <td>{this.state.players[player].seleccion}</td>
+              <Zoom in={true} style={{ transitionDelay:'500ms' }}>
+              {this.state.players[player].estado == 'pending' ?
+                <td><span style={{margin: '1em'}} className="tag is-danger">Pending...</span></td>
+              : <td><span style={{margin: '1em'}} className="tag is-success">Ready!</span></td> }
+              </Zoom>
+            <td><div className="tags has-addons" style={{marginTop: '14.5%'}}>
+                  <span className="tag is-dark"><img src={Chipo} height='20' width='20'/></span>
+                  <span className="tag is-info" style={{fontWeight: '500'}}>x{this.state.players[player].bet}</span>
+              </div></td>
+              </tr>
+              )
     })
     }
+    </tbody>
+    </table>
+    </div>
 
-    <p style={{fontWeight: '500', textAlign: 'center'}}>usuario1 👻
-              <Zoom in={true} style={{ transitionDelay:'500ms' }}>
-              <span style={{margin: '1em'}} className="tag is-success">Ready!</span></Zoom></p>
 
-    <p className='level-item' style={{fontWeight: '500', textAlign: 'center'}}>Steve 🍬 <span>
-              <progress style={{width:'1em', marginLeft: '2em'}} className="progress is-danger" max="100">30%</progress></span></p>
 
-    <p className='level-item' style={{fontWeight: '500', textAlign: 'center'}}>knightdark 👑 <span>
-              <progress style={{width:'1em', marginLeft: '2em'}} className="progress is-danger" max="100">30%</progress></span></p>
+
     </Paper>
+    <button className='button is-danger is-small is-outlined' onClick={()=>this.returnLobby()}>Return to lobby</button>
 </div>
 
-<div className="column is-one-third">
+<div className="column is-two-third" style={{marginTop: '1em', position: 'relative'}}>
+
+    {this.state.explode ? plup : ''}
     <svg height="18em" width="18em" className='circulo' style={{width: '100%'}} viewBox="0 0 370 370" >
     <defs>
         <filter id="blurFilter">
             <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" />
         </filter>
     </defs>
+      <circle cx="180" cy="180" r={radius*1.2} stroke="black" strokeWidth="0" fill="#2dbbc5"/>
+      <circle cx="180" cy="180" r={radius*1.15} stroke="black" strokeWidth="0" fill="#32dbe7"/>
+
      <g id='spin' className={'svgc '}>
         <circle cx="180" cy="180" r={radius} stroke="black" strokeWidth="0" fill="white"/>
         {symbols.map((simbolo, index)=>{
@@ -192,17 +328,13 @@ return(
          })
         }
         </g>
-
+        <circle cx="180" cy="180" r={8} stroke="black" strokeWidth="0" fill="#32dbe7"/>
           <rect rx='5' x='5' y='120' width="6em" height="2em" style={{fill:'white', zIndex: 999, fillOpacity:'0.7'}}
                 stroke="white" strokeWidth="1" />
     </svg>
 
   </div>
-  <div className="column is-one-third" style={{marginTop: '2em'}}>
-  <button className='button is-primary' style={{marginRight: '1em'}} onClick={()=>this.start()}>Start</button>
-  <button className='button is-danger' style={{marginRight: '1em'}} onClick={()=>this.stop()} >Stop</button>
-  <button className='button is-warning' onClick={()=>this.stopx()} >Stop in symbol</button>
-   </div>
+
  </div>
 </div>
     );

@@ -39,6 +39,7 @@ JoinRoom(room){
   this.setState({redirect: true,room:room})
 }
 
+// wordBreak: 'break-word'
 
 render() {
 if (this.state.redirect) {
