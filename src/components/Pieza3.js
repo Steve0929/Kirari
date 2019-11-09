@@ -6,6 +6,7 @@ import win from '../win.mp3';
 import './bulma/css/bulma.css'
 import Rou from './rou.png';
 import Chipo from './chip.png';
+import Mon from './moun.jpg';
 import Lottie from 'react-lottie';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
@@ -19,6 +20,8 @@ class Pieza3 extends Component{
       this.tick = this.tick.bind(this);
       this.stopInSymbol = this.stopInSymbol.bind(this);
       this.gameid = this.props.match.params.id;
+      let winSound = new Audio (win);
+      this.winSound = winSound;
     }
 
   state = {
@@ -40,6 +43,10 @@ class Pieza3 extends Component{
 
 componentDidUpdate() {
 
+}
+
+componentWillUnmount(){
+  this.state.socket.emit('forceDisconnect');
 }
 
 componentDidMount(){
@@ -64,8 +71,10 @@ componentDidMount(){
   });
 
   this.state.socket.on('gameFinished', (msg)=>{
+    console.log(msg)
+    console.log(this.state.socket.id)
     let coins = msg.players[this.state.socket.id].coins;
-    this.setState({players: msg.players, simbolSeleccionado: 0, locked: false, explode: false, totalCoins: coins})
+    this.setState({players: msg.players, locked: false, totalCoins: coins})
   });
 
   if(this.state.enMovimiento){
@@ -92,15 +101,21 @@ lockIn(){
 }
 
 setBet(){
-  var placeholderBet = this.state.inputBet;
-  if(placeholderBet<25){
-    this.state.socket.emit("bet", {amount: 25});
-    this.setState({bet: 25, inputBet: 25});
+  var placeholderBet = parseInt(this.state.inputBet, 10);
+  if(placeholderBet > this.state.totalCoins){
+
   }
   else{
-    this.state.socket.emit("bet", {amount: placeholderBet});
-    this.setState({bet: placeholderBet});
+    if(placeholderBet<25){
+      this.state.socket.emit("bet", {amount: 25});
+      this.setState({bet: 25, inputBet: 25});
+    }
+    else{
+      this.state.socket.emit("bet", {amount: placeholderBet});
+      this.setState({bet: placeholderBet});
+    }
   }
+
 }
 
 handleInputChange(e) {
@@ -146,10 +161,9 @@ stopInSymbol(){
   let range = Math.ceil(this.state.rotation % 360)
 
   if(a<range && range <b){
-    let winSound = new Audio (win);
-     winSound.play();
      this.state.socket.emit("finished");
      this.setState({enMovimiento: false, stopping: false, explode: true})
+     this.winSound.play();
   }
   else{
     spin.style.transform = "rotate(" + (-angle) + "deg)";
@@ -187,7 +201,7 @@ if(this.state.joining){return(<div>Conectando...<progress style={{width:'14em'}}
 var PI2=Math.PI*2;
 var angle=PI2-PI2/4;
 var startAngle=0;
-var symbols = ['🎁','🎒','👻','🍇','🎈','👑','🐋','🎑','🍬','🎏','👻','👽'];
+var symbols = ['🎁','🎒','👻','🍇','🎈','👑','🐋','🎑','🍬','🎏','🎍','👽'];
 var sweepAngle=PI2/symbols.length;
 var radius = 150;
 var blurred;
@@ -199,6 +213,7 @@ const defaultOptions = {loop: false, autoplay: true, animationData: require('./p
   }
 };
 
+
 var ev=[ {eventName: 'complete',callback: () => this.setState({explode: false}),},]
 
 var plup = <Lottie options={defaultOptions} height={'23em'} width={'23em'} isStopped={false} isClickToPauseDisabled = {true} eventListeners={ev}
@@ -206,17 +221,17 @@ var plup = <Lottie options={defaultOptions} height={'23em'} width={'23em'} isSto
 
 return(
 <div className="container is-fluid" id='pieza3' style={{marginTop: '3em'}}>
-  <div className="columns is-variable">
+  <div className="columns is-variable" >
  <div className="column ">
   <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em', marginTop: '0em',
                   zoom: '0.85', width: 'max-content', marginLeft: '0em',
-                  background: '', boxShadow:'0px 1px 15px 0px rgb(68, 159, 247), 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)',
-                  boxShadow:'0px 1px 15px 0px #b5b5b5, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
+                  background: '#2f2e4a', boxShadow:'0px 1px 15px 0px rgb(68, 159, 247), 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)',
+                  boxShadow:'0px 1px 15px 0px #1e202f, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
            className='rounder'>
     <Paper style={{marginRight: '-1em',marginLeft: '-1em', marginBottom: '-1em',
                    marginBottom: '2em',height: '8em', paddingTop: '1em', boxShadow:'none', borderRadius: '10px',
                    borderBottomLeftRadius: '0px',borderBottomRightRadius: '0px',
-                   background: 'linear-gradient(135deg, #29fadf 0%,#4c83ff 100%)', background: 'black'}}>
+                   background: 'linear-gradient(135deg, #29fadf 0%,#4c83ff 100%)', background: '#1e202f'}}>
         <h5 className="grey-text text-darken-3 title"  style={{color:'white', textAlign: 'center', marginTop: '1%'}}>
             Game {this.gameid}</h5>
 
@@ -231,13 +246,13 @@ return(
 
 {this.state.locked == true ?
   <div>
-    <input className="input is-info" type="number" min='25' value={this.state.inputBet}  name="inputBet" disabled
+    <input className="input is-info blend" type="number" min='25' value={this.state.inputBet}  name="inputBet" disabled
            style={{marginBottom: '1em', width: '25%', fontWeight: 700, color:'#4698f9'}}></input>
     <div className='button is-info' disabled style={{marginLeft: '1em'}}>Set bet<img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/></div>
   </div>
 
    :<div>
-   <input className="input is-info" type="number" min='25' value={this.state.inputBet} onChange={e=>this.handleInputChange(e)} name="inputBet"
+   <input className="input is-info blend" type="number" min='25' value={this.state.inputBet} onChange={e=>this.handleInputChange(e)} name="inputBet"
        style={{marginBottom: '1em', width: '25%', fontWeight: 700, color:'#4698f9'}}></input>
     <div className='button is-info' style={{marginLeft: '1em'}} onClick={()=>this.setBet()}>
       Set bet<img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/></div></div>
@@ -245,19 +260,19 @@ return(
 
     <div className="field">
     <div className="control">
-      <div className="select is-info">
+      <div className="select is-info blend">
       {this.state.locked == true ?
-        <select disabled onChange={(e)=>this.selectSimbolo(e.target.value)}>
+        <select className="blend" disabled onChange={(e)=>this.selectSimbolo(e.target.value)}>
           {symbols.map((simbolo, index)=>{return(<option key={index}>{simbolo}</option>)})}
         </select>
       :
-      <select  onChange={(e)=>this.selectSimbolo(e.target.value)}>
+      <select className="blend" onChange={(e)=>this.selectSimbolo(e.target.value)}>
         {symbols.map((simbolo, index)=>{return(<option key={index}>{simbolo}</option>)})}
       </select>
       }
 
       </div>
-      {this.state.locked == true ? <div className='button' disabled style={{marginLeft: '1em'}}>Locked In</div>
+      {this.state.locked == true ? <div className='button' disabled style={{marginLeft: '4em'}}>Locked In</div>
         : <div className='button is-info' style={{marginLeft: '4em'}} onClick={()=>this.lockIn()} >Lock</div>
       }
 
@@ -265,20 +280,21 @@ return(
     </div>
 
     <div className="table-container">
-      <table className="table is-hoverable">
+      <table className="table " style={{backgroundColor: 'inherit'}}>
       <thead>
         <tr>
-        <th>Player</th>
-        <th>Choice</th>
-        <th>Status</th>
-        <th>Bet</th>
+        <th className='whitew'>Player</th>
+        <th className='whitew'>Choice</th>
+        <th className='whitew'>Status</th>
+        <th className='whitew'>Bet</th>
+        <th className='whitew'>Profit</th>
       </tr>
     </thead>
         <tbody>
     {Object.keys(this.state.players).map((player, key)=>{
       return(<tr key={key+'as3'} style={{fontWeight: '500'}}>
 
-              <th>{this.state.players[player].nombre}</th>
+              <th className='whitew'>{this.state.players[player].nombre}</th>
               <td>{this.state.players[player].seleccion}</td>
               <Zoom in={true} style={{ transitionDelay:'500ms' }}>
               {this.state.players[player].estado == 'pending' ?
@@ -286,12 +302,18 @@ return(
               : <td><span style={{margin: '1em'}} className="tag is-success">Ready!</span></td> }
               </Zoom>
             <td><div className="tags has-addons" style={{marginTop: '14.5%'}}>
-                  <span className="tag is-dark"><img src={Chipo} height='20' width='20'/></span>
+                  <span className="tag is-dark" style={{background: '#1e202f'}}><img src={Chipo} height='20' width='20'/></span>
                   <span className="tag is-info" style={{fontWeight: '500'}}>x{this.state.players[player].bet}</span>
               </div></td>
-              </tr>
-              )
-    })
+              <td>{
+                  this.state.players[player].profits ?
+                    this.state.players[player].profits > 0 ? <div style={{color: '#23d160' }}>+{this.state.players[player].profits}</div>
+                    : <div  style={{color: '#ff3860' }}>{this.state.players[player].profits}</div>
+                  : '' }
+              </td>
+            </tr>
+          )
+     })
     }
     </tbody>
     </table>
@@ -301,7 +323,7 @@ return(
 
 
     </Paper>
-    <button className='button is-danger is-small is-outlined' onClick={()=>this.returnLobby()}>Return to lobby</button>
+
 </div>
 
 <div className="column is-two-third" style={{marginTop: '1em', position: 'relative'}}>

@@ -3,6 +3,7 @@ import Paper from '@material-ui/core/Paper';
 import './bulma/css/bulma.css'
 import Chipo from './chip.png';
 import Eye from './eye.png';
+import Sn from './sn.jpg';
 import {Redirect} from 'react-router-dom';
 
 class Lobby extends React.Component {
@@ -47,20 +48,21 @@ if (this.state.redirect) {
     }
 return (
 <div className='conainer is-fluid' style={{maxWidth: '100%', marginTop: '2em'}}>
- <div className="columns is-centered">
-   <div className="column is-two-thirds">
-    <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em',
-                    boxShadow:'0px 1px 15px 0px rgb(68, 159, 247), 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
+ <div className="columns is-centered" >
+   <div className="column is-full">
+    <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em', width: 'max-content',
+                    background: '#1e202f', color: 'white', marginRight: '0em',
+                    boxShadow:'0px 1px 15px 0px #0a0a0a, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
              className='rounder '>
   <div className="table-container">
-    <table className="table is-hoverable">
+    <table className="table" style={{backgroundColor: 'inherit', color:'white'}}>
       <thead>
         <tr>
-        <th>Room id</th>
-        <th>Players</th>
-        <th>Bet</th>
-        <th>Join</th>
-        <th>Spectate</th>
+        <th className='whitew'>Room id</th>
+        <th className='whitew'>Players</th>
+        <th className='whitew'>Bet</th>
+        <th className='whitew'>Join</th>
+        <th className='whitew'>Spectate</th>
       </tr>
     </thead>
     <tbody>
@@ -68,23 +70,23 @@ return (
       this.state.rooms.map(room=>{
         return(
         <tr key={room.id}>
-        <th>{room.id}</th>
-        <td>{room.playersnum}/4</td>
+        <th className='whitew'>{room.id}</th>
+        <td className='whitew'>{room.playersnum}/4</td>
         <td><div className="tags has-addons" style={{marginTop: '13%'}}>
               <span className="tag is-dark"><img src={Chipo} height='20' width='20'/></span>
               <span className="tag is-info" style={{fontWeight: '500'}}>x{room.bet}</span>
             </div></td>
         <td><a onClick={()=>this.JoinRoom(room.id)} className="tag is-success">Join</a></td>
-        <td>{room.spectators} spectating <a><img src={Eye} height='20' width='20'/></a></td>
+        <td className='whitew'>{room.spectators} spectating <a><img src={Eye} height='20' width='20'/></a></td>
         </tr>
       )
       })
-      : <tr><th>Error while loading the rooms</th></tr>
+      : <tr className='whitew'><th>Error while loading the rooms</th></tr>
     }
     </tbody>
     </table>
     </div>
-    <button className='button is-primary' style={{marginRight: '1em'}} onClick={()=>this.getRooms()}>Refresh</button>
+    <button className='button is-info' style={{marginRight: '1em'}} onClick={()=>this.getRooms()}>Refresh</button>
 
     </Paper>
     </div>
