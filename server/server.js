@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
   socket.on('join', async (msg)=>{
       console.log(msg.user+' has joined '+msg.room+' game');
       socket.room = msg.room;
-      var usuario = {nombre: 'Esteban', id: socket.id, coins: 500, seleccion: '', estado: 'pending', bet: 25}
+      var usuario = {nombre: 'Esteban', id: socket.id, coins: 500, seleccion: '', estado: 'pending', bet: 25, profits: null}
       var room= await rooms.find(room => room.id === msg.room);
       room.players[socket.id] = usuario;
       socket.join(msg.room);
@@ -123,7 +123,8 @@ io.on('connection', (socket) => {
     var room= await rooms.find(room => room.id === socket.room);
     room.players[socket.id].estado = 'locked';
     room.ready++;
-    if(room.ready == 3 && room.inGame == false){
+    //if(room.ready == 3 && room.inGame == false){
+    if(room.inGame == false){
        io.sockets.in(socket.room).emit('start', {players: room.players});
        room.inGame = true;
        setTimeout(function(){game(socket)},2500);
@@ -138,8 +139,16 @@ io.on('connection', (socket) => {
     console.log('ff')
     var room= await rooms.find(room => room.id === socket.room);
     var isFinished = true;
-    room.players[socket.id].seleccion = '';
+    //room.players[socket.id].seleccion = '';
     room.players[socket.id].estado = 'pending';
+    if(room.players[socket.id].seleccion == room.winSymbol){
+       room.players[socket.id].coins = room.players[socket.id].coins +  room.players[socket.id].bet;
+       room.players[socket.id].profits =  room.players[socket.id].bet
+    }
+    else{
+       room.players[socket.id].coins = room.players[socket.id].coins -  room.players[socket.id].bet;
+       room.players[socket.id].profits =  - room.players[socket.id].bet
+    }
     for (var key of Object.keys(room.players)) {
          if(room.players[key].estado != 'pending'){
             isFinished = false;
@@ -166,11 +175,16 @@ async function game(socket){
         room.players[key].estado = 'playing';
         //console.log(key + " -> " + p[key])
       }
-    choices = [[0,6],[34,37],[64,68],[94,98]];
+    /*
+    choices = [[0,6 ,'🐋'],[34,37, '🎑'],[64,68,'🍬'],[94,98,'🎏'],[126,130,'🎍'],[157,161,'👽'],[188,192,'🎁']
+               [213,218,'🎒'],[248,252,'👻'],[274,280,'🍇'], [304,310,'🎈'], [332,340,'👑'] ];     */
+    choices = [[0, 6, '🐋']]
+
     var index = Math.floor(Math.random() * choices.length);
     var win = choices[index];
     console.log('winner: '+win)
-    io.sockets.in(socket.room).emit('stop', {a: win[0], b: win[1], players: room.players});
+    room.winSymbol = win[2];
+    io.sockets.in(socket.room).emit('stop', {a: win[0], b: win[1], c: win[2], players: room.players});
   }
 
   socket.on('disconnect', async ()=>{
