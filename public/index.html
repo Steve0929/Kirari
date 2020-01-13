@@ -20,6 +20,44 @@
 
     body {
     overflow: hidden;
+    background-color: #25253c;
+
+    /*background-image: url('/moun.jpg');*/
+    }
+
+    .pap{
+      box-shadow: rgb(10, 10, 10) 0px 1px 3px 1px, rgba(0, 0, 0, 0.14) 0px 2px 0px 0px, rgba(0, 0, 0, 0.12) 0px 3px 0px 0px;
+      /*boxShadow:'0px 1px 15px 0px #0a0a0a, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)' */
+    }
+
+    .mobilize{
+      -webkit-transform-style: preserve-3d;
+      -webkit-backface-visibility: hidden;
+      -webkit-transform:translate3d(0,0,0);
+      transform: translateZ(0);
+      will-change: transform;
+      -webkit-backface-visibility: hidden;
+      -webkit-perspective: 1000;
+
+    }
+
+    .glass {
+    background-color: rgba(255, 255, 255, .15) !important;
+    backdrop-filter: blur(5px) !important
+    }
+
+   .whitew{
+      color: white !important;
+    }
+
+    .blend{
+      background-color: #1e202f !important;
+      border-color: #1e202f !important;
+    }
+
+    .blend2{
+      background-color: #1e202f !important;
+      border-color: #484d70 !important;
     }
 
     .positionSpin{
@@ -35,6 +73,8 @@
     .svgc{
       transform-box: fill-box;
       transform-origin: 50% 50%;
+      will-change: transform;
+      transform: translateZ(0);
 
     }
 
