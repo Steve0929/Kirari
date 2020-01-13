@@ -10,16 +10,28 @@ class Lobby extends React.Component {
   state = {
       rooms: null,
        redirect: false,
-       room: null
+       room: null,
+       username: 'username'
+  }
+
+  handleInputChange(e) {
+      this.setState({
+          [e.target.name]: e.target.value
+      });
   }
 
 componentDidMount() {
+  this.setState({username:this.props.username})
   this.getRooms();
 }
 
+setUser(){
+  this.props.onSetUser(this.state.username)
+}
 
 getRooms(){
-  var url = 'http://localhost:3001';
+  //var url = 'http://localhost:3001';
+  var url = 'http://192.168.31.54:3001';
     fetch(url+'/rooms', {
           method: 'GET',
           headers: {'Content-Type' : 'application/json', 'Accept': 'application/json'}
@@ -37,7 +49,7 @@ getRooms(){
 
 JoinRoom(room){
   console.log('Join: '+room)
-  this.setState({redirect: true,room:room})
+  this.setState({redirect: true, room:room})
 }
 
 // wordBreak: 'break-word'
@@ -48,11 +60,11 @@ if (this.state.redirect) {
     }
 return (
 <div className='conainer is-fluid' style={{maxWidth: '100%', marginTop: '2em'}}>
- <div className="columns is-centered" >
-   <div className="column is-full">
+ <div className="columns " >
+   <div className="column is-three-fifths">
     <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em', width: 'max-content',
-                    background: '#1e202f', color: 'white', marginRight: '0em',
-                    boxShadow:'0px 1px 15px 0px #0a0a0a, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
+                    background: '#1e202f', color: 'white', marginRight: '1em',
+                    boxShadow:'rgb(10, 10, 10) 0px 1px 3px 1px'}}
              className='rounder '>
   <div className="table-container">
     <table className="table" style={{backgroundColor: 'inherit', color:'white'}}>
@@ -89,6 +101,19 @@ return (
     <button className='button is-info' style={{marginRight: '1em'}} onClick={()=>this.getRooms()}>Refresh</button>
 
     </Paper>
+    </div>
+
+      <div className="column is-one-third">
+       <Paper  style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em', width: 'max-content',
+                       background: '#1e202f', color: 'white', marginRight: '1em',
+                       boxShadow:'rgb(10, 10, 10) 0px 1px 3px 1px'}}className='rounder '>
+        <p style={{paddingTop: '1em', marginBottom: '1em'}}>{this.props.username}</p>
+        <input className="input is-info blend2" type="text" value={this.state.username}
+                  onChange={e=>this.handleInputChange(e)} name="username"
+                  style={{marginBottom: '1em', width: '75%', fontWeight: 700, color:'#209cee'}}></input>
+        <button className='button is-info' style={{marginLeft: '1em'}} onClick={()=>this.setUser()}>Set</button>
+        </Paper>
+
     </div>
   </div>
 </div>

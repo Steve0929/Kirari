@@ -31,7 +31,8 @@ class Pieza3 extends Component{
       rotation: Math.PI*2/360,
       blips: 0,
       stoping: false,
-      socket: window.io('http://localhost:3001'),
+      //socket: window.io('http://localhost:3001'),
+      socket: window.io('http://192.168.31.54:3001'),
       players: null,
       simbolSeleccionado: 0,
       locked: false,
@@ -39,6 +40,7 @@ class Pieza3 extends Component{
       bet: 25,
       inputBet: 25,
       totalCoins: null,
+      serverStatus: ''
   }
 
 componentDidUpdate() {
@@ -50,7 +52,12 @@ componentWillUnmount(){
 }
 
 componentDidMount(){
-  this.state.socket.emit("join", {user: 'Esteban', room: this.gameid});
+  console.log(this.props);
+  this.state.socket.on('invalidBet', (msg)=>{
+    this.setState({locked: false})
+  });
+
+  this.state.socket.emit("join", {user: this.props.username, room: this.gameid});
 
   this.state.socket.on('update', (msg)=>{
     let coins = null;
@@ -73,7 +80,14 @@ componentDidMount(){
   this.state.socket.on('gameFinished', (msg)=>{
     console.log(msg)
     console.log(this.state.socket.id)
-    let coins = msg.players[this.state.socket.id].coins;
+    if(msg.players[this.state.socket.id]){
+      var coins = msg.players[this.state.socket.id].coins;
+    }
+    else{
+      console.log('error')
+      //console.log(msg.players[this.state.socket.id].coins);
+      var coins = 0;
+    }
     this.setState({players: msg.players, locked: false, totalCoins: coins})
   });
 
@@ -181,7 +195,7 @@ tick() {
   var spin = document.getElementById("spin");
   if(this.state.blips%6 == 0){
     var blips = new Audio (blip);
-     blips.play();
+    blips.play();
   }
 
   spin.style.transform = "rotate(" + (-angle) + "deg)";
@@ -220,14 +234,14 @@ var plup = <Lottie options={defaultOptions} height={'23em'} width={'23em'} isSto
          direction={1} speed={1.5} isPaused={false} style={{position: 'absolute',top:'-2em', left: '1em',zIndex: '9999'}}/>;
 
 return(
-<div className="container is-fluid" id='pieza3' style={{marginTop: '3em'}}>
+<div className="container is-fluid" id='pieza3' style={{maxWidth: '100%',marginTop: '3em'}}>
   <div className="columns is-variable" >
  <div className="column ">
   <Paper style={{marginTop: '2em',padding:'1em', maxWidth: '100%', paddingTop: '0em', margin:'1em', marginTop: '0em',
-                  zoom: '0.85', width: 'max-content', marginLeft: '0em',
+                  zoom: '0.85', width: 'max-content', marginLeft: '1em',
                   background: '#2f2e4a', boxShadow:'0px 1px 15px 0px rgb(68, 159, 247), 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)',
-                  boxShadow:'0px 1px 15px 0px #1e202f, 0px 2px 12px 0px rgba(0,0,0,0.14), 0px 3px 10px -2px rgba(0,0,0,0.12)'}}
-           className='rounder'>
+                  boxShadow:' rgb(10, 10, 10) 0px 1px 3px 1px'}}
+           className='rounder glass'>
     <Paper style={{marginRight: '-1em',marginLeft: '-1em', marginBottom: '-1em',
                    marginBottom: '2em',height: '8em', paddingTop: '1em', boxShadow:'none', borderRadius: '10px',
                    borderBottomLeftRadius: '0px',borderBottomRightRadius: '0px',
@@ -241,7 +255,7 @@ return(
         <div style={{color:'white',fontWeight: '500', textAlign: 'center'}}>Your bet:
         <img src={Chipo} height='25' width='25' style={{marginLeft: '8px'}}/> x{this.state.bet}</div>
 
-        <p style={{color:'white',fontWeight: '500', textAlign: 'center',marginTop: '1em'}}>Status:</p>
+        <p style={{color:'white',fontWeight: '500', textAlign: 'center',marginTop: '1em'}}>Status: {this.state.serverStatus}</p>
     </Paper>
 
 {this.state.locked == true ?
@@ -326,19 +340,19 @@ return(
 
 </div>
 
-<div className="column is-two-third" style={{marginTop: '1em', position: 'relative'}}>
+<div className="column is-two-third mobilize" style={{marginTop: '1em', position: 'relative'}}>
 
     {this.state.explode ? plup : ''}
     <svg height="18em" width="18em" className='circulo' style={{width: '100%'}} viewBox="0 0 370 370" >
     <defs>
         <filter id="blurFilter">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" />
         </filter>
     </defs>
       <circle cx="180" cy="180" r={radius*1.2} stroke="black" strokeWidth="0" fill="#2dbbc5"/>
       <circle cx="180" cy="180" r={radius*1.15} stroke="black" strokeWidth="0" fill="#32dbe7"/>
 
-     <g id='spin' className={'svgc '}>
+     <g id='spin' className={'svgc mobilize'}>
         <circle cx="180" cy="180" r={radius} stroke="black" strokeWidth="0" fill="white"/>
         {symbols.map((simbolo, index)=>{
           var endAngle=startAngle+sweepAngle;

@@ -4,8 +4,10 @@ import './App.css';
 import Pieza from './components/Pieza.js';
 import Pieza2 from './components/Pieza2.js';
 import Pieza3 from './components/Pieza3.js';
+import Nav from './components/Nav.js';
 import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
 import Lobby from './components/Lobby.js';
+import Mon from './components/moun.jpg';
 
 class App extends React.Component {
   constructor(props) {
@@ -14,7 +16,12 @@ class App extends React.Component {
     this.tick = this.tick.bind(this);
   }
 
+  state={
+    username: 'username',
+  }
+
   componentDidMount() {
+    this.setState({username: 'username'})
     //requestAnimationFrame(this.tick);
   }
 
@@ -30,16 +37,23 @@ class App extends React.Component {
   }
 
 
+  setUser = (name) => {
+        this.setState({username: name});
+        //  <div style={{backgroundImage:`url(${Mon})`}}>
+    }
+
   render() {
     return (
-      <Router>
-      <header className="App-header" style={{backgroundColor: '#f0f0f0', maxWidth: '100%', display:'flow-root'}}>
-
-      <Route path='/game/:id' render={(props) => <Pieza3  style={{overflow: 'hidden'}} {...props}/>} />
+      <div>
+      <Router >
+      <Nav/>
+      <header className="App-header" style={{backgroundColor: 'rgb(54, 58, 88)', maxWidth: '100%', display:'flow-root'}}>
+      <Route path='/game/:id' render={(props) => <Pieza3  username={this.state.username} style={{overflow: 'hidden'}} {...props}/>} />
       <Route path='/perfil' render={(props) => <Pieza3  style={{overflow: 'hidden'}}/>} />
-      <Route path='/lobby' render={(props) => <Lobby />} />
+      <Route path='/lobby' render={(props) => <Lobby onSetUser={this.setUser} username={this.state.username}/>} />
       </header>
       </Router>
+      </div>
     );
   }
 }
