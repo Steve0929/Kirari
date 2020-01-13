@@ -1,14 +1,17 @@
 # Kirari
-Gambling
+Multiplayer spinner Gambling using  Node.js, ReactJS and Socket.io.
 
-Install the dependencies, run server.js
 
+### Installation
+Navigate to the server folder, install the dependencies and run server.js
 ```sh
+$ cd server
 $ npm install 
 $ node server.js
 ``` 
-Then run npm start
+Then to initialize the React app, go to project root and run npm start.
 ```sh
+$ cd ..
 $ npm start
 ``` 
 * Navigate to http://localhost:3000/lobby
