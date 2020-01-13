@@ -12,9 +12,9 @@ var fs = require('fs');
 const cors = require('cors');
 
 // allow-cors
-app.options('*', cors())
+//app.options('*', cors())
 app.use(function(req,res,next){
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000"); //change for "http://localhost:3000"
+  res.header("Access-Control-Allow-Origin", "*"); //change for "http://localhost:3000"
   //res.header("Access-Control-Allow-Credentials", "true"); //!!!
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
@@ -29,49 +29,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended:true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-
-var sess = {
-  secret: 'bulletproof server',
-  resave: true,
-  saveUninitialized: true,
-  cookie: {
-        secure: false
-    }
-}
-//app.use(session(sess));
-app.use(cookieSession({
-    name: 'arela',
-    keys: ['kirari19239xAbfdkey'],
-    maxAge: 15* 1000 //
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-//app.use(express.static(__dirname + './arela/src/App.js'))
-
-//connect to database
-/*
-const db = 'mongodb://localhost/manage';
-const awsdb = 'mongodb://admin:adminpagos1@ds225608.mlab.com:25608/pagos'
-mongoose.connect(awsdb, {
-  useNewUrlParser: true,
-  })
-  .then (db=> console.log('Conectado a la db')).catch(er=>console.log(err));
-*/
-
-app.set('port', process.env.PORT || 3001)
+app.set('port', process.env.PORT || 3001, '0.0.0.0')
 var x = app.get('port');
 const server = require('http').createServer(app);
+
 var io = require('socket.io')(server);
-var rooms = [{id:'st12af23', playersnum: 2, spectators: 5, bet: 25, players: {}, ready: 0, inGame: false},
-             {id:'f79va91j', playersnum: 4, spectators: 0, bet: 5,  players: {}, ready: 0, inGame: false},
-             {id:'9dk18dhq', playersnum: 4, spectators: 7, bet: 10, players: {}, ready: 0, inGame: false},
-             {id:'rj9fmla4', playersnum: 1, spectators: 2, bet: 50, players: {}, ready: 0, inGame: false},
+var rooms = [{id:'st12af23', playersnum: 0, spectators: 0, bet: 25, players: {}, ready: 0, inGame: false},
+             {id:'f79va91j', playersnum: 0, spectators: 0, bet: 5,  players: {}, ready: 0, inGame: false},
+             {id:'9dk18dhq', playersnum: 0, spectators: 0, bet: 10, players: {}, ready: 0, inGame: false},
+             {id:'rj9fmla4', playersnum: 0, spectators: 0, bet: 50, players: {}, ready: 0, inGame: false},
 
             ];
 
 
 app.get('/rooms', (req,res) =>{
+rooms.forEach(room=>{
+  //console.log(Object.keys(room.players).length);
+  let num = Object.keys(room.players).length;
+  //room.players.length == undefined ? num = 0 : num = room.players.length;
+  room.playersnum = num;
+})
+
 res.json({
   rooms: rooms
  });
@@ -91,7 +69,7 @@ io.on('connection', (socket) => {
   socket.on('join', async (msg)=>{
       console.log(msg.user+' has joined '+msg.room+' game');
       socket.room = msg.room;
-      var usuario = {nombre: 'Esteban', id: socket.id, coins: 500, seleccion: '', estado: 'pending', bet: 25, profits: null}
+      var usuario = {nombre: msg.user, id: socket.id, coins: 500, seleccion: '', estado: 'pending', bet: 25, profits: null}
       var room= await rooms.find(room => room.id === msg.room);
       room.players[socket.id] = usuario;
       socket.join(msg.room);
@@ -121,10 +99,14 @@ io.on('connection', (socket) => {
   socket.on('lockIn', async (msg)=>{
     console.log(socket+' locked in');
     var room= await rooms.find(room => room.id === socket.room);
+    if(room.players[socket.id].bet > room.players[socket.id].coins){
+       socket.emit('invalidBet');
+       return;
+    }
     room.players[socket.id].estado = 'locked';
     room.ready++;
     //if(room.ready == 3 && room.inGame == false){
-    if(room.inGame == false){
+    if(room.inGame == false && room.ready == Object.keys(room.players).length){
        io.sockets.in(socket.room).emit('start', {players: room.players});
        room.inGame = true;
        setTimeout(function(){game(socket)},2500);
@@ -136,7 +118,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('finished', async (msg)=>{
-    console.log('ff')
+    console.log('game finished')
     var room= await rooms.find(room => room.id === socket.room);
     var isFinished = true;
     //room.players[socket.id].seleccion = '';
@@ -175,13 +157,14 @@ async function game(socket){
         room.players[key].estado = 'playing';
         //console.log(key + " -> " + p[key])
       }
-    /*
-    choices = [[0,6 ,'🐋'],[34,37, '🎑'],[64,68,'🍬'],[94,98,'🎏'],[126,130,'🎍'],[157,161,'👽'],[188,192,'🎁']
-               [213,218,'🎒'],[248,252,'👻'],[274,280,'🍇'], [304,310,'🎈'], [332,340,'👑'] ];     */
-    choices = [[0, 6, '🐋']]
 
-    var index = Math.floor(Math.random() * choices.length);
-    var win = choices[index];
+    choices = [[0,6 ,'🐋'],[34,37, '🎑'],[64,68,'🍬'],[94,98,'🎏'],[126,130,'🎍'],[157,161,'👽'],[188,192,'🎁'],
+               [213,218,'🎒'],[248,252,'👻'],[274,280,'🍇'], [304,310,'🎈'], [332,340,'👑'] ];
+    //choices = [[0, 6, '🐋']]
+
+    var index = await Math.floor(Math.random() * choices.length);
+    console.log('Index: '+index)
+    var win =  choices[index];
     console.log('winner: '+win)
     room.winSymbol = win[2];
     io.sockets.in(socket.room).emit('stop', {a: win[0], b: win[1], c: win[2], players: room.players});
@@ -191,18 +174,24 @@ async function game(socket){
     console.log(socket+' disconnected');
     socket.leave();
     var room= await rooms.find(room => room.id === socket.room);
-    delete room.players[socket.id];
-    //io.emit('update', {players: room.players});
-    io.sockets.in(socket.room).emit('update', {players: room.players});
+    if(room){
+      delete room.players[socket.id];
+      //io.emit('update', {players: room.players});
+      io.sockets.in(socket.room).emit('update', {players: room.players});
+    }
+
   })
 
   socket.on('forceDisconnect', async ()=>{
     console.log(socket+' disconnected forcedly');
     socket.leave();
     var room= await rooms.find(room => room.id === socket.room);
-    delete room.players[socket.id];
+    if(room){
+      delete room.players[socket.id];
+      io.sockets.in(socket.room).emit('update', {players: room.players});
+    }
     //io.emit('update', {players: room.players});
-    io.sockets.in(socket.room).emit('update', {players: room.players});
+
   })
 
 
@@ -211,5 +200,5 @@ async function game(socket){
 
 
 
-server.listen(x);
+server.listen(3001, '0.0.0.0');
 console.log("Server On "+x);
