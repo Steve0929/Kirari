@@ -30,8 +30,7 @@ setUser(){
 }
 
 getRooms(){
-  //var url = 'http://localhost:3001';
-  var url = 'http://192.168.31.54:3001';
+  var url = 'http://localhost:3001';
     fetch(url+'/rooms', {
           method: 'GET',
           headers: {'Content-Type' : 'application/json', 'Accept': 'application/json'}
